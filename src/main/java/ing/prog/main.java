@@ -7,7 +7,7 @@ package ing.prog;
 
 /**
  * Här tänds själva proggramet på
- * Hålls avsiktligen extremt minimal för att demonstrera god separation av ansvar (SoC).
+ * Hålls avsiktligen extremt minimal.
  */
 public class Main {
     /**
