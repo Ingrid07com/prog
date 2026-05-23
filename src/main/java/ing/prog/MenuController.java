@@ -1,3 +1,7 @@
+//Det här är gränssnittet som användaren ser och klickar runt i. Den snurrar i en loop och visar menyerna,
+//tar emot det man skriver på tangentbordet, städar upp inmatningen och säger till motorn (LibraryManager) vad den ska utföra.
+
+
 package ing.prog;
 
 public class MenuController {

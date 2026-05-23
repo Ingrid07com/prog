@@ -1,3 +1,8 @@
+//Den här klassen ärver från LibraryItem. Från början var den bara till för vanliga böcker, 
+//men för att slippa skapa en massa nya filer på A-nivån så har vi byggt om den. Nu funkar den som en allt-i-allo-klass 
+//som även kan hålla ordning på spel, musik och film. Den har smarta kontroller som ser till att man inte matar in felaktig data 
+//(som minusår på en åldersgräns) och den fattar själv hur den ska skriva ut sig på skärmen beroende på om objektet är en bok, en film eller ett spel.
+
 package ing.prog;
 
 /**

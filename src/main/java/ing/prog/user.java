@@ -1,3 +1,7 @@
+//De här två klasserna sköter kunderna. User sparar info om kunden
+//och kollar till exempel att e-postadressen faktiskt ser ut som en riktig mejl
+
+
 package ing.prog;
 
 

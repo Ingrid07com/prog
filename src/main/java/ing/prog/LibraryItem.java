@@ -1,3 +1,8 @@
+//Det här är grundmallen för allt man kan låna i biblioteket. Eftersom alla grejer (böcker, tidningar, spel) har vissa saker gemensamt
+//som ett ID, en titel och en status om de är lediga eller inte så samlar vi det här. 
+//Den har också inbyggda spärrar som kollar så att man inte råkar skriva in en tom titel eller ett negativt ID. 
+//Dessutom fixar den så att listorna automatiskt kan sorteras i bokstavsordning.
+
 package ing.prog;
 
 /**

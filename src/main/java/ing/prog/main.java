@@ -1,3 +1,6 @@
+//Fungerar som programmets startpunkt. Dess enda uppgift är att starta applikationen genom att skapa
+// och aktivera användargränssnittet
+
 package ing.prog;
 
 /**

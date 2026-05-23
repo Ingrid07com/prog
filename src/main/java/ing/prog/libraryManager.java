@@ -1,3 +1,7 @@
+//Det här är själva motorn och hjärnan i programmet. Den sköter allt grovjobb: pratar med databasen (JSON-servern) för att hämta,
+//spara och ta bort grejer, samt styr utlåningen. Den kollar om en kund är spärrad, ändrar status på servern och sparar alla lån i en vanlig textfil
+//(active_loans.txt) så att inget försvinner. Det är också här inuti som alla Java Streams bor, vilka används för att filtrera, sortera och räkna i listorna på ett modernt och effektivt sätt.
+
 package ing.prog;
 
 import com.google.gson.Gson;

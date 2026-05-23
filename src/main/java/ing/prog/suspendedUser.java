@@ -1,3 +1,5 @@
+//SuspendedUser är en hjälpklass som bara håller reda på ID-numren för de kunder som har blivit spärrade från att låna.
+
 package ing.prog;
 
 
