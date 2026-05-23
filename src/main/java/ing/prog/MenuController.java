@@ -1,7 +1,6 @@
 //Det är här hela användarupplevelsen bor. Den sköter logiken för huvudmenyn och undermenyerna (som skapande och kundmenyn). 
-// Den använder IO för att prata med användaren i terminalen, tar emot valen, och ropar sedan på LibraryManager
-// för att faktiskt utföra sakerna på servern (t.ex. "Spara den här boken" eller "Hämta den här kunden").
-
+//Den använder IO för att prata med användaren i terminalen, tar emot valen, och ropar sedan på LibraryManager
+//för att faktiskt utföra sakerna på servern (t.ex. "Spara den här boken" eller "Hämta den här kunden").
 
 package ing.prog;
 
@@ -41,7 +40,7 @@ public class MenuController {
         IO.println("7. Skriv ut listor sorterade (Comparable)");
         IO.println("8. Kontrollera lånerätt");
         IO.println("9. Avsluta");
-        IO.println("=============================================");
+        IO.println("===============================================");
         IO.print("Val: ");
 
         switch (IO.readln().trim()) {

@@ -1,41 +1,25 @@
-//Det här är klassen som gör grovjobbet bakom kulisserna. 
-//Det är den enda klassen som har direktkontakt med JSON-servern via nätverket (GET, POST, DELETE). 
-//Den tar emot rådata från servern, gör om det till Java-objekt (som User eller Book) och skickar det vidare till menyn. 
-//Den innehåller också själva logiken, som att matcha en User mot en SuspendedUser för att kontrollera om någon är spärrad
-
 package ing.prog;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.*;
 import java.net.URI;
 import java.net.http.*;
 import java.util.*;
 
-/**
- * Central motor för systemet. Sköter all HTTP-kommunikation (REST API)
- * mot JSON-servern samt hanterar logik för filtrering, sökning och spärrkontroller.
- */
 public class LibraryManager {
     private final String baseUrl = "http://localhost:3000";
     private final HttpClient client = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
+    private final Path loanFilePath = Paths.get("active_loans.txt");
 
-    /**
-     * Skickar ett synkront HTTP GET-anrop till angiven slutpunkt.
-     * * @param endpoint Resursens sökväg (t.ex. "/users").
-     * @return Serverns svar i rått JSON-format som en sträng.
-     */
+    // --- HTTP-metoder ---
     private String sendGet(String endpoint) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(baseUrl + endpoint)).GET().build();
         return client.send(request, HttpResponse.BodyHandlers.ofString()).body();
     }
 
-    /**
-     * Skickar ett HTTP POST-anrop med JSON-data för att registrera ett nytt objekt på servern.
-     * * @param endpoint Sökväg där objektet ska sparas.
-     * @param json Den serialiserade strängen som representerar objektet.
-     */
     private void sendPost(String endpoint, String json) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + endpoint))
@@ -45,43 +29,38 @@ public class LibraryManager {
         client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    /**
-     * Skickar ett HTTP DELETE-anrop för att radera en resurs via dess specifika ID.
-     * * @param endpoint Slutpunkten för resursen.
-     * @param id Databas-ID:t på posten som ska tas bort.
-     */
-    private void sendDelete(String endpoint, String id) throws IOException, InterruptedException {
+    private void sendPut(String endpoint, int id, String json) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + endpoint + "/" + id))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+        client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private void sendDelete(String endpoint, int id) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(baseUrl + endpoint + "/" + id)).DELETE().build();
         client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    // --- GET-METODER FÖR ATT HÄMTA SAMLINGAR FRÅN SERVER ---
-
+    // --- Hämtningar ---
     public List<Book> getAllBooks() {
-        try { return gson.fromJson(sendGet("/books"), new TypeToken<List<Book>>(){}.getType()); } 
-        catch (Exception e) { return new ArrayList<>(); }
+        try { return gson.fromJson(sendGet("/books"), new TypeToken<List<Book>>(){}.getType()); } catch (Exception e) { return new ArrayList<>(); }
     }
-
     public List<Magazine> getAllMagazines() {
-        try { return gson.fromJson(sendGet("/magazines"), new TypeToken<List<Magazine>>(){}.getType()); } 
-        catch (Exception e) { return new ArrayList<>(); }
+        try { return gson.fromJson(sendGet("/magazines"), new TypeToken<List<Magazine>>(){}.getType()); } catch (Exception e) { return new ArrayList<>(); }
     }
-
     public List<User> getAllUsers() {
-        try { return gson.fromJson(sendGet("/users"), new TypeToken<List<User>>(){}.getType()); } 
-        catch (Exception e) { return new ArrayList<>(); }
+        try { return gson.fromJson(sendGet("/users"), new TypeToken<List<User>>(){}.getType()); } catch (Exception e) { return new ArrayList<>(); }
     }
-
     public List<SuspendedUser> getAllSuspended() {
-        try { return gson.fromJson(sendGet("/suspendedUsers"), new TypeToken<List<SuspendedUser>>(){}.getType()); } 
-        catch (Exception e) { return new ArrayList<>(); }
+        try { return gson.fromJson(sendGet("/suspendedUsers"), new TypeToken<List<SuspendedUser>>(){}.getType()); } catch (Exception e) { return new ArrayList<>(); }
+    }
+    // Hämtar den nya polymorfa listan med Spel, Musik och Film från servern som Book-objekt
+    public List<Book> getAllMedia() {
+        try { return gson.fromJson(sendGet("/media"), new TypeToken<List<Book>>(){}.getType()); } catch (Exception e) { return new ArrayList<>(); }
     }
 
-    /**
-     * Konverterar ett Java-objekt till JSON och laddar upp det till servern.
-     * * @param endpoint Målmappen på servern (t.ex. "/books").
-     * @param item Objektet som ska serialiseras och skickas.
-     */
     public void createResource(String endpoint, Object item) {
         try {
             sendPost(endpoint, gson.toJson(item));
@@ -91,159 +70,123 @@ public class LibraryManager {
         }
     }
 
-    /**
-     * Söker igenom listan av användare efter en specifik e-postadress.
-     * * @param email E-postadressen som ska matchas (skiftlägesokänsligt).
-     */
-    public void findUserByEmail(String email) {
-        for (User user : getAllUsers()) {
-            if (user.getEmail().equalsIgnoreCase(email.trim())) {
-                IO.println("Träff: " + user);
+    // =========================================================================
+    // 🏷️ FILBASERAD UTLÅNINGLOGIK DIRECT I KLASSEN
+    // =========================================================================
+
+    public void borrowItem(int userId, int itemId, String type) {
+        try {
+            // Kontrollera spärr via Stream (.anyMatch)
+            boolean isSuspended = getAllSuspended().stream().anyMatch(su -> su.getUserId() == userId);
+            if (isSuspended) {
+                IO.println("❌ Lån nekas! Kunden är spärrad.");
                 return;
             }
-        }
-        IO.println("Ingen kund hittades med e-post: " + email);
-    }
 
-    /**
-     * Söker efter media (både böcker och tidningar) polymorft via dess titel.
-     * * @param title Söksträngen (titeln) som användaren letar efter.
-     */
-    public void findMediaByTitle(String title) {
-        List<LibraryItem> combinedMedia = new ArrayList<>();
-        combinedMedia.addAll(getAllBooks());
-        combinedMedia.addAll(getAllMagazines());
+            LibraryItem item = null;
+            if (type.equalsIgnoreCase("books")) item = getAllBooks().stream().filter(b -> b.getId() == itemId).findFirst().orElse(null);
+            else if (type.equalsIgnoreCase("magazines")) item = getAllMagazines().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
+            else if (type.equalsIgnoreCase("media")) item = getAllMedia().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
 
-        boolean found = false;
-        for (LibraryItem item : combinedMedia) {
-            if (item.getTitle().equalsIgnoreCase(title.trim())) {
-                IO.println("Träff: " + item);
-                found = true;
-            }
-        }
-        if (!found) IO.println("Inget medie hittades med titeln: " + title);
-    }
+            if (item == null) { IO.println("❌ Hittades inte."); return; }
+            if (!item.isAvailable()) { IO.println("❌ Redan utlånad!"); return; }
 
-    /**
-     * Letar upp en bok eller tidning baserat på dess titel, identifierar dess ID,
-     * och skickar sedan en begäran om att radera den från servern.
-     * * @param title Titeln på det medie som ska tas bort.
-     */
-    public void deleteMediaByTitle(String title) {
-        try {
-            // Sök i böcker
-            for (Book b : getAllBooks()) {
-                if (b.getTitle().equalsIgnoreCase(title)) {
-                    sendDelete("/books", b.getId());
-                    IO.println("✔ Boken '" + title + "' raderad från servern.");
-                    return;
-                }
-            }
-            // Sök i tidningar
-            for (Magazine m : getAllMagazines()) {
-                if (m.getTitle().equalsIgnoreCase(title)) {
-                    sendDelete("/magazines", m.getId());
-                    IO.println("✔ Tidningen '" + title + "' raderad från servern.");
-                    return;
-                }
-            }
-            IO.println("Mediet hittades inte.");
-        } catch (Exception e) {
-            IO.println("Fel vid borttagning: " + e.getMessage());
-        }
-    }
+            // Uppdatera isAvailable till false på servern
+            item.setAvailable(false);
+            sendPut("/" + type, itemId, gson.toJson(item));
 
-    /**
-     * Letar upp en kund via dennes e-postadress och raderar kontot från servern.
-     * * @param email E-postadressen tillhörande kunden som ska tas bort.
-     */
-    public void deleteUserByEmail(String email) {
-        try {
-            for (User u : getAllUsers()) {
-                if (u.getEmail().equalsIgnoreCase(email)) {
-                    sendDelete("/users", u.getId());
-                    IO.println("✔ Kunden med e-post " + email + " borttagen.");
-                    return;
-                }
-            }
-            IO.println("Hittade ingen kund med den e-postadressen.");
+            // Skriv till filen (append-läget lägger till i slutet av filen)
+            String receipt = "Användare " + userId + " lånade ID " + itemId + " (" + item.getTitle() + ") | Datum: " + new Date() + "\n";
+            Files.writeString(loanFilePath, receipt, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+
+            IO.println("✔ Utlåning sparad på servern och loggad till 'active_loans.txt'.");
         } catch (Exception e) {
             IO.println("Fel: " + e.getMessage());
         }
     }
 
-    /**
-     * Tar bort en spärrpost från servern vilket ger kunden tillbaka sina lånerättigheter.
-     * * @param id Det unika spärr-ID:t (inte kundens användar-ID).
-     */
-    public void deleteSuspensionById(String id) {
+    public void returnItem(int itemId, String type) {
         try {
-            sendDelete("/suspendedUsers", id);
-            IO.println("✔ Spärren har hävts på servern.");
+            LibraryItem item = null;
+            if (type.equalsIgnoreCase("books")) item = getAllBooks().stream().filter(b -> b.getId() == itemId).findFirst().orElse(null);
+            else if (type.equalsIgnoreCase("magazines")) item = getAllMagazines().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
+            else if (type.equalsIgnoreCase("media")) item = getAllMedia().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
+
+            if (item == null) { IO.println("❌ Hittades inte."); return; }
+
+            // Återställ isAvailable till true
+            item.setAvailable(true);
+            sendPut("/" + type, itemId, gson.toJson(item));
+            IO.println("✔ Återlämning slutförd på servern!");
         } catch (Exception e) {
-            IO.println("Misslyckades att häva spärr: " + e.getMessage());
+            IO.println("Fel: " + e.getMessage());
         }
     }
 
-    /**
-     * Kontrollerar om en specifik kund har rätt att låna genom att verifiera
-     * om kundens unika ID finns med i listan över spärrade användare.
-     * * @param email E-postadressen till kunden som ska kontrolleras.
-     */
+    public void printActiveLoansFromFile() {
+        try {
+            if (!Files.exists(loanFilePath)) { IO.println("Inga lån registrerade på fil."); return; }
+            IO.println("\n--- INLÄST HISTORIK FRÅN FIL ---");
+            Files.readAllLines(loanFilePath).forEach(IO::println);
+        } catch (Exception e) { IO.println("Kunde inte läsa fil."); }
+    }
+
+    // =========================================================================
+    // 🚀 JAVA STREAMS-METODER (A-KRAV)
+    // =========================================================================
+
+    public void streamFilterMediaByGenre(String genre) {
+        IO.println("\n--- 🔍 Filtrerat på genre: [" + genre + "] (.filter) ---");
+        getAllMedia().stream()
+                .filter(m -> m.getGenre().equalsIgnoreCase(genre.trim()))
+                .forEach(IO::println);
+    }
+
+    public void streamSortMediaByIdDescending() {
+        IO.println("\n--- 🔽 All media sorterad fallande på ID (.sorted) ---");
+        getAllMedia().stream()
+                .sorted((m1, m2) -> Integer.compare(m2.getId(), m1.getId()))
+                .forEach(IO::println);
+    }
+
+    public void streamCountBooksByAuthor(String author) {
+        long count = getAllBooks().stream()
+                .filter(b -> b.getAuthor().equalsIgnoreCase(author.trim()))
+                .count();
+        IO.println("📚 Författaren '" + author + "' har skrivit " + count + " bok/böcker (.count).");
+    }
+
+    public void streamMapToUppercaseTitles() {
+        IO.println("\n--- 🔠 Medietitlar transformerade till VERSALER (.map) ---");
+        getAllMedia().stream()
+                .map(m -> m.getTitle().toUpperCase())
+                .forEach(IO::println);
+    }
+
+    // --- Tidigare logik ---
+    public void deleteMediaByTitle(String title) {
+        try {
+            Optional<Book> b = getAllBooks().stream().filter(x -> x.getTitle().equalsIgnoreCase(title)).findFirst();
+            if (b.isPresent()) { sendDelete("/books", b.get().getId()); IO.println("Bok raderad."); return; }
+            Optional<Book> m = getAllMedia().stream().filter(x -> x.getTitle().equalsIgnoreCase(title)).findFirst();
+            if (m.isPresent()) { sendDelete("/media", m.get().getId()); IO.println("Media raderad."); return; }
+            IO.println("Hittades ej.");
+        } catch (Exception e) { IO.println("Fel."); }
+    }
+
     public void checkLoanStatus(String email) {
-        User targetUser = null;
-        // Hitta först användaren via e-post
-        for (User u : getAllUsers()) {
-            if (u.getEmail().equalsIgnoreCase(email.trim())) {
-                targetUser = u;
-                break;
-            }
-        }
-
-        if (targetUser == null) {
-            IO.println("Kunden hittades inte.");
-            return;
-        }
-
-        // Kontrollera om användarens ID matchar ett ID i spärrlistan
-        boolean isSuspended = false;
-        for (SuspendedUser su : getAllSuspended()) {
-            if (su.getUserId().equals(targetUser.getId())) {
-                isSuspended = true;
-                break;
-            }
-        }
-
-        // Ge feedback baserat på sökresultatet
-        if (isSuspended) {
-            IO.println("LÅNEFÖRBUD: Kunden '" + targetUser.getName() + "' är för närvarande avstängd!");
-        } else {
-            IO.println("STATUS OK: Kunden '" + targetUser.getName() + "' har fullständiga lånerättigheter.");
-        }
+        Optional<User> u = getAllUsers().stream().filter(x -> x.getEmail().equalsIgnoreCase(email)).findFirst();
+        if (u.isEmpty()) { IO.println("Hittades ej."); return; }
+        boolean susp = getAllSuspended().stream().anyMatch(s -> s.getUserId() == u.get().getId());
+        IO.println(susp ? "❌ SPÄRRAD" : "✔ OK");
     }
 
-    /**
-     * Hämtar rådata från databasen, sorterar alla samlingar i minnet med hjälp av
-     * de regler som definierats i klassernas `compareTo`-metoder, och skriver ut dem.
-     */
     public void printSortedLists() {
         List<Book> books = getAllBooks();
         List<Magazine> magazines = getAllMagazines();
-        List<User> users = getAllUsers();
-
-        // Sorterar objekten i listorna (kräver att klasserna implementerar Comparable)
         Collections.sort(books);
         Collections.sort(magazines);
-        Collections.sort(users);
-
-        // Skriv ut resultatet
-        IO.println("\n--- BÖCKER (Sorterade på Titel) ---");
-        books.forEach(IO::println);
-
-        IO.println("\n--- TIDNINGAR (Sorterade på Titel) ---");
-        magazines.forEach(IO::println);
-
-        IO.println("\n--- KUNDER (Sorterade på Namn) ---");
-        users.forEach(IO::println);
+        IO.println("\n--- BÖCKER ---"); books.forEach(IO::println);
+        IO.println("\n--- TIDNINGAR ---"); magazines.forEach(IO::println);
     }
 }
