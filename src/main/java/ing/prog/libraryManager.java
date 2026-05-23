@@ -64,7 +64,7 @@ public class LibraryManager {
     public void createResource(String endpoint, Object item) {
         try {
             sendPost(endpoint, gson.toJson(item));
-            IO.println("✔ Sparat framgångsrikt på servern!");
+            IO.println("Sparat framgångsrikt på servern!");
         } catch (Exception e) {
             IO.println("Fel vid lagring: " + e.getMessage());
         }
@@ -79,7 +79,7 @@ public class LibraryManager {
             // Kontrollera spärr via Stream (.anyMatch)
             boolean isSuspended = getAllSuspended().stream().anyMatch(su -> su.getUserId() == userId);
             if (isSuspended) {
-                IO.println("❌ Lån nekas! Kunden är spärrad.");
+                IO.println("Lån nekas! Kunden är spärrad.");
                 return;
             }
 
@@ -88,8 +88,8 @@ public class LibraryManager {
             else if (type.equalsIgnoreCase("magazines")) item = getAllMagazines().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
             else if (type.equalsIgnoreCase("media")) item = getAllMedia().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
 
-            if (item == null) { IO.println("❌ Hittades inte."); return; }
-            if (!item.isAvailable()) { IO.println("❌ Redan utlånad!"); return; }
+            if (item == null) { IO.println("Hittades inte."); return; }
+            if (!item.isAvailable()) { IO.println("Redan utlånad!"); return; }
 
             // Uppdatera isAvailable till false på servern
             item.setAvailable(false);
@@ -112,7 +112,7 @@ public class LibraryManager {
             else if (type.equalsIgnoreCase("magazines")) item = getAllMagazines().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
             else if (type.equalsIgnoreCase("media")) item = getAllMedia().stream().filter(m -> m.getId() == itemId).findFirst().orElse(null);
 
-            if (item == null) { IO.println("❌ Hittades inte."); return; }
+            if (item == null) { IO.println("Hittades inte."); return; }
 
             // Återställ isAvailable till true
             item.setAvailable(true);
@@ -132,11 +132,11 @@ public class LibraryManager {
     }
 
     // =========================================================================
-    // 🚀 JAVA STREAMS-METODER (A-KRAV)
+    // JAVA STREAMS-METODER (A-KRAV)
     // =========================================================================
 
     public void streamFilterMediaByGenre(String genre) {
-        IO.println("\n--- 🔍 Filtrerat på genre: [" + genre + "] (.filter) ---");
+        IO.println("\n---Filtrerat på genre: [" + genre + "] (.filter) ---");
         getAllMedia().stream()
                 .filter(m -> m.getGenre().equalsIgnoreCase(genre.trim()))
                 .forEach(IO::println);
@@ -157,7 +157,7 @@ public class LibraryManager {
     }
 
     public void streamMapToUppercaseTitles() {
-        IO.println("\n--- 🔠 Medietitlar transformerade till VERSALER (.map) ---");
+        IO.println("\n--- Medietitlar transformerade till VERSALER (.map) ---");
         getAllMedia().stream()
                 .map(m -> m.getTitle().toUpperCase())
                 .forEach(IO::println);
@@ -178,7 +178,7 @@ public class LibraryManager {
         Optional<User> u = getAllUsers().stream().filter(x -> x.getEmail().equalsIgnoreCase(email)).findFirst();
         if (u.isEmpty()) { IO.println("Hittades ej."); return; }
         boolean susp = getAllSuspended().stream().anyMatch(s -> s.getUserId() == u.get().getId());
-        IO.println(susp ? "❌ SPÄRRAD" : "✔ OK");
+        IO.println(susp ? "SPÄRRAD" : "✔ OK");
     }
 
     public void printSortedLists() {
