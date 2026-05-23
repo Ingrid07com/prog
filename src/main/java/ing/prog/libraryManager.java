@@ -1,3 +1,8 @@
+//Det här är klassen som gör grovjobbet bakom kulisserna. 
+//Det är den enda klassen som har direktkontakt med JSON-servern via nätverket (GET, POST, DELETE). 
+//Den tar emot rådata från servern, gör om det till Java-objekt (som User eller Book) och skickar det vidare till menyn. 
+//Den innehåller också själva logiken, som att matcha en User mot en SuspendedUser för att kontrollera om någon är spärrad
+
 package ing.prog;
 
 import com.google.gson.Gson;

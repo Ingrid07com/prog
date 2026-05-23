@@ -1,3 +1,8 @@
+//Det här är egentligen bara en digital lapp som säger att en viss kund inte får låna.
+//Den innehåller ett eget spärrID och ett userId. 
+//Det är just det här userId:t som kopplar ihop den med en specifik User. 
+//LibraryManager använder sedan den här kopplingen för att se om en kunds ID finns med på spärrlistan eller inte.
+
 package ing.prog;
 
 /**
