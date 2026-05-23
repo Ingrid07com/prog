@@ -1,9 +1,7 @@
-package ing.prog.service;
+package ing.prog;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import ing.prog.model.*;
-import ing.prog.ui.IO;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.*;
