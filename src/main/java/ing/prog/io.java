@@ -14,7 +14,7 @@ import java.util.Scanner;
 public class IO {
 
     // Skapar en privat, konstant skanner som läser från tangentbordet (System.in).
-    // 'static' gör att alla metoder i klassen delar på samma skanner-instans.
+    // 'static' gör att alla metoder i klassen delar på samma skanner instans.
     private static final Scanner scanner = new Scanner(System.in);
 
     /**
@@ -50,7 +50,7 @@ public class IO {
             try {
                 return Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
-                System.out.print("⚠️ Ange ett heltal: ");
+                System.out.print("Ange ett heltal: ");
             }
         }
     }

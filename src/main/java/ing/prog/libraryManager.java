@@ -69,11 +69,8 @@ public class LibraryManager {
             IO.println("Fel vid lagring: " + e.getMessage());
         }
     }
-
-    // =========================================================================
-    // 🏷️ FILBASERAD UTLÅNINGLOGIK DIRECT I KLASSEN
-    // =========================================================================
-
+ 
+//Filbaserad utlåningslogik direkt i klassen fil  
     public void borrowItem(int userId, int itemId, String type) {
         try {
             // Kontrollera spärr via Stream (.anyMatch)
@@ -99,7 +96,7 @@ public class LibraryManager {
             String receipt = "Användare " + userId + " lånade ID " + itemId + " (" + item.getTitle() + ") | Datum: " + new Date() + "\n";
             Files.writeString(loanFilePath, receipt, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 
-            IO.println("✔ Utlåning sparad på servern och loggad till 'active_loans.txt'.");
+            IO.println("Utlåning sparad på servern och loggad till 'active_loans.txt'.");
         } catch (Exception e) {
             IO.println("Fel: " + e.getMessage());
         }
@@ -114,10 +111,10 @@ public class LibraryManager {
 
             if (item == null) { IO.println("Hittades inte."); return; }
 
-            // Återställ isAvailable till true
+            // Återställer isAvailable till true
             item.setAvailable(true);
             sendPut("/" + type, itemId, gson.toJson(item));
-            IO.println("✔ Återlämning slutförd på servern!");
+            IO.println("Återlämning slutförd på servern!");
         } catch (Exception e) {
             IO.println("Fel: " + e.getMessage());
         }
@@ -131,9 +128,10 @@ public class LibraryManager {
         } catch (Exception e) { IO.println("Kunde inte läsa fil."); }
     }
 
-    // =========================================================================
-    // JAVA STREAMS-METODER (A-KRAV)
-    // =========================================================================
+    
+    //java streams metoder = är som ett löpande band. 
+    //Det är en kedja av instruktioner som bearbetar din data i farten,
+    //så att du slipper skriva långa for-loopar och if-satser.
 
     public void streamFilterMediaByGenre(String genre) {
         IO.println("\n---Filtrerat på genre: [" + genre + "] (.filter) ---");
@@ -143,7 +141,7 @@ public class LibraryManager {
     }
 
     public void streamSortMediaByIdDescending() {
-        IO.println("\n--- 🔽 All media sorterad fallande på ID (.sorted) ---");
+        IO.println("\n--- All media sorterad fallande på ID (.sorted) ---");
         getAllMedia().stream()
                 .sorted((m1, m2) -> Integer.compare(m2.getId(), m1.getId()))
                 .forEach(IO::println);
@@ -153,7 +151,7 @@ public class LibraryManager {
         long count = getAllBooks().stream()
                 .filter(b -> b.getAuthor().equalsIgnoreCase(author.trim()))
                 .count();
-        IO.println("📚 Författaren '" + author + "' har skrivit " + count + " bok/böcker (.count).");
+        IO.println("Författaren '" + author + "' har skrivit " + count + " bok/böcker (.count).");
     }
 
     public void streamMapToUppercaseTitles() {

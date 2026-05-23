@@ -1,43 +1,21 @@
-//Det här är egentligen bara en digital lapp som säger att en viss kund inte får låna.
-//Den innehåller ett eget spärrID och ett userId. 
-//Det är just det här userId:t som kopplar ihop den med en specifik User. 
-//LibraryManager använder sedan den här kopplingen för att se om en kunds ID finns med på spärrlistan eller inte.
-
 package ing.prog;
 
-/**
- * Representerar en avstängningspost (spärr) för en kund som brutit mot reglerna.
- * Den kopplar ihop ett specifikt spärr-ID med kundens unika användar-ID.
- * * @author Utvecklare
- * @version 1.0
- */
-public class SuspendedUser {
-    // Privata variabler för att skydda datatillståndet
-    private String id;
-    private String userId;
 
-    /**
-     * Skapar en ny avstängningspost.
-     * * @param id Det unika ID-numret för själva spärren.
-     * @param userId ID-numret på den kund som ska blockeras.
-     */
-    public SuspendedUser(String id, String userId) {
+public class SuspendedUser {
+    private int id;
+    private int userId;
+
+    public SuspendedUser(int id, int userId) {
+        if (id <= 0 || userId <= 0) throw new IllegalArgumentException("ID-värden måste vara positiva.");
         this.id = id;
         this.userId = userId;
     }
 
-    // Getters och Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public int getId() { return id; }
+    public int getUserId() { return userId; }
 
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-
-    /**
-     * Returnerar en textrepresentation av spärren för administrationen.
-     */
     @Override
     public String toString() {
-        return "[Spärrad] Spärr-ID: " + id + " | Tillhör Användar-ID: " + userId;
+        return "[Spärrad] Spärr-ID: " + id + " | Kund-ID: " + userId;
     }
 }

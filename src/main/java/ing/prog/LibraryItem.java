@@ -1,30 +1,53 @@
-//Det här är en abstrakt superklass, vilket betyder att det är en mall som man inte kan skapa direkt, utan andra klasser ärver ifrån den. 
-// Den håller koll på sånt som all media i biblioteket har gemensamt: ett ID och en titel. 
-// Den ser också till att allt som ärver från den automatiskt går att sortera i bokstavsordning på titeln. 
 package ing.prog;
 
 /**
- * Abstrakt superklass för alla typer av media i biblioteket.
- * Innehåller gemensamma attribut och hanterar alfabetisk sortering på titel.
+ * Abstrakt superklass för samtliga artiklar i biblioteket.
+ * Implementerar Comparable för automatisk alfabetisk sortering på titel.
+ * * @author Utvecklare
+ * @version 3.0 (A-nivå)
  */
 public abstract class LibraryItem implements Comparable<LibraryItem> {
-    private String id;
+    private int id;
     private String title;
-
-    public LibraryItem(String id, String title) {
-        setId(id);
-        setTitle(title);
-    }
-
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    private boolean isAvailable;
 
     /**
-     * Gör det möjligt att sortera alla typer av media (böcker och tidningar)
-     * baserat på deras titel.
+     * Konstruktor som validerar inmatningen direkt vid skapandet.
+     * * @param id Unikt artikel-ID
+     * @param title Artikelns titel
+     * @param isAvailable Tillgänglighetsstatus
+     */
+    public LibraryItem(int id, String title, boolean isAvailable) {
+        setId(id);
+        setTitle(title);
+        this.isAvailable = isAvailable;
+    }
+
+    public int getId() { return id; }
+    
+    /**
+     * Vaktande setter för ID.
+     */
+    public void setId(int id) {
+        if (id <= 0) throw new IllegalArgumentException("ID måste vara ett positivt heltal över 0.");
+        this.id = id;
+    }
+
+    public String getTitle() { return title; }
+    
+    /**
+     * Vaktande setter för titel.
+     */
+    public void setTitle(String title) {
+        if (title == null || title.trim().isEmpty()) throw new IllegalArgumentException("Titeln får inte vara tom.");
+        this.title = title.trim();
+    }
+
+    public boolean isAvailable() { return isAvailable; }
+    public void setAvailable(boolean available) { this.isAvailable = available; }
+
+    /**
+     * Gör att listor med LibraryItem kan sorteras alfabetiskt (skiftlägesoberoende).
      */
     @Override
     public int compareTo(LibraryItem other) {
