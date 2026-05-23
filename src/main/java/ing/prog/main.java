@@ -2,10 +2,11 @@
 //Genom att hålla den så här extremt ren visar du att du har delat upp koden enligt konstens alla regler
 //Main ska bara starta festen, inte hålla i den!
 
+
 package ing.prog;
 
 /**
- * Applikationens officiella startpunkt.
+ * Här tänds själva proggramet på
  * Hålls avsiktligen extremt minimal för att demonstrera god separation av ansvar (SoC).
  */
 public class Main {
